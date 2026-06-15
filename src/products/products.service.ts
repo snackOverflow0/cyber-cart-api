@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -35,5 +35,39 @@ export class ProductsService {
     return this.prisma.product.findMany({
       orderBy: { createdAt: 'desc' }
     });
+  }
+
+  async findOne(id: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID '${id}' was not found inside the active catalog.`);
+    }
+
+    return product;
+  }
+
+  async restock(id: string, additionalStock: number) {
+    if (additionalStock <= 0) {
+      throw new BadRequestException('Restock increment value must be greater than zero.');
+    }
+
+    await this.findOne(id);
+
+    const updatedProduct = await this.prisma.product.update({
+      where: { id },
+      data: {
+        stock: {
+          increment: additionalStock
+        },
+      },
+    });
+
+    return {
+      message: `Inventory stock replenished successfully for product: ${updatedProduct.name}`,
+      currentStock: updatedProduct.stock,
+    }
   }
 }
