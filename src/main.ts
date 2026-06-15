@@ -12,10 +12,10 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    })
+    }),
   );
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log('CyberCart Engine operational at: http://localhost:3000/api/v1')
+  console.log('CyberCart Engine operational at: http://localhost:3000/api/v1');
 }
 bootstrap();
