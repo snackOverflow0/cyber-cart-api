@@ -12,6 +12,6 @@ export class PrismaService
 
     async onModuleDestroy() {
         await this.$disconnect();
-        console.log('PostgreSQL Connection pool gracefully terminated')
+        console.log('PostgreSQL Connection pool gracefully terminated.')
     }
   }
