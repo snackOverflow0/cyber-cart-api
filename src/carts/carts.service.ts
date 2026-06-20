@@ -79,4 +79,64 @@ export class CartsService {
 
     return cart;
   }
+
+  async updateItemQuantity(cartItemId: string, targetQuantity: number) {
+    if (targetQuantity < 1) {
+      throw new BadRequestException('Target allocation quantity must be at least 1 unit.')
+    }
+
+    const cartItem = await this.prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: { product: true }
+    });
+
+    if (!cartItem) {
+      throw new NotFoundException(`Cart line item with ID '${cartItemId}' was not found.`);
+    }
+
+    if (cartItem.product.stock < targetQuantity) {
+      throw new BadRequestException(`Insufficient store stock. The vendor only has ${cartItem.product.stock} units of ${cartItem.product.name} left.`);
+    }
+
+    return this.prisma.cartItem.update({
+      where: { id: cartItemId },
+      data: { quantity: targetQuantity }
+    });
+  }
+
+  async removeCartItem(cartItemId: string) {
+    const cartItem = await this.prisma.cartItem.findUnique({
+      where: { id: cartItemId }
+    });
+
+    if (!cartItem) {
+      throw new NotFoundException(`Cart line item with ID '${cartItemId}' was not found.`);
+    }
+
+    await this.prisma.cartItem.delete({
+      where: { id: cartItemId }
+    })
+
+    return {
+      message: 'Line item has been removed from your shopping cart successfully.'
+    };
+  }
+
+  async clearCart(userId: string) {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: userId },
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`No active shopping cart container found for user ID '${userId}'.`);
+    }
+
+    await this.prisma.cartItem.deleteMany({
+      where: { id: cart.id }
+    })
+
+    return {
+      message: 'Your shopping cart has been flushed completely clean.'
+    }
+  }
 }
